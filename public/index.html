@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SK CDN 테스트 개통 신청</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+[hidden]{display:none!important}
+img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: 신청 양식(왼쪽, 스크롤) + 상담 챗봇(오른쪽, 고정). 좁은 화면에서는 챗봇이 하단 버튼으로 열리는 패널이 됨 */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --sunk:#e8ecf0; --line:#d5dbe2;
+  --ink:#16202b; --muted:#5b6876; --accent:#d9480f; --accent-ink:#ffffff; --accent-soft:#fde8dd;
+  --ok:#1f7a4d; --ok-soft:#dff2e8; --warn:#9a5b00; --warn-soft:#fdf0d6; --err:#b42318;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f151b; --surface:#17202a; --sunk:#1e2935; --line:#2c3a48;
+  --ink:#e6ebf0; --muted:#97a5b4; --accent:#ff7a3d; --accent-ink:#1a0d05; --accent-soft:#3a2216;
+  --ok:#5cc98f; --ok-soft:#173326; --warn:#f0b54a; --warn-soft:#352812; --err:#ff7b6e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#17202a; --sunk:#1e2935; --line:#2c3a48;
+  --ink:#e6ebf0; --muted:#97a5b4; --accent:#ff7a3d; --accent-ink:#1a0d05; --accent-soft:#3a2216;
+  --ok:#5cc98f; --ok-soft:#173326; --warn:#f0b54a; --warn-soft:#352812; --err:#ff7b6e; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--mono)}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);
+  padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top-in{max-width:1320px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-size:17px;letter-spacing:-.01em}
+.brand span{font-size:12.5px;color:var(--muted)}
+.tabs{margin-left:auto;display:flex;gap:4px;background:var(--sunk);padding:3px;border-radius:999px}
+.tabs button{border:0;background:transparent;padding:6px 14px;border-radius:999px;cursor:pointer;font-size:13.5px;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.shell{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px;
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{min-width:0;display:flex;flex-direction:column;gap:20px}
+
+.intro{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end}
+.intro h1{font-size:26px;line-height:1.25;margin:0;text-wrap:balance;letter-spacing:-.02em}
+.intro p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.progress{text-align:right;font-size:13px;color:var(--muted)}
+.progress strong{display:block;font-size:22px;color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{height:4px;background:var(--sunk);border-radius:4px;overflow:hidden;margin-top:6px;width:160px;margin-left:auto}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+.flow{display:flex;gap:6px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.flow span{padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.flow span.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.card-h{display:flex;align-items:baseline;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--sunk)}
+.card-h h2{margin:0;font-size:16px}
+.card-h .n{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500}
+.card-h .st{margin-left:auto;font-size:12px;color:var(--muted)}
+.card-h .st.done{color:var(--ok)}
+.card-b{padding:20px;display:flex;flex-direction:column;gap:22px}
+
+.q{display:flex;flex-direction:column;gap:8px}
+.q>label,.q>.ql{font-weight:600;font-size:14.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.q .no{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400;min-width:22px}
+.req{color:var(--accent);font-weight:600;font-size:12px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.hint code,.q code{font-family:var(--mono);font-size:12.5px;background:var(--sunk);padding:1px 5px;border-radius:4px}
+.ask{border:0;background:none;color:var(--accent);font-size:12.5px;cursor:pointer;padding:0;margin-left:auto;font-weight:500}
+.ask:hover{text-decoration:underline}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date],select,textarea{
+  width:100%;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 11px;min-width:0}
+textarea{resize:vertical;min-height:64px}
+input.mono,textarea.mono{font-family:var(--mono);font-size:14px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.bad{border-color:var(--err)!important}
+.err{color:var(--err);font-size:12.5px;margin:0}
+.flash{animation:flash 1.4s ease}
+@keyframes flash{0%{background:var(--accent-soft)}100%{background:var(--surface)}}
+
+table.contacts{width:100%;border-collapse:collapse}
+table.contacts th{font-size:12.5px;color:var(--muted);font-weight:500;text-align:left;padding:0 6px 6px}
+table.contacts td{padding:4px 6px;vertical-align:middle}
+table.contacts td:first-child{font-weight:600;font-size:14px;white-space:nowrap;padding-left:0}
+.tbl-wrap{overflow-x:auto}
+.tbl-wrap table{min-width:560px}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chk{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer;background:var(--surface);user-select:none}
+.chk input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+.chk:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.chk small{color:var(--muted);font-size:12px}
+.inline{display:flex;gap:8px;align-items:center}
+.inline input{max-width:140px}
+.unit{color:var(--muted);font-size:13px;font-family:var(--mono)}
+
+.notice{display:flex;gap:10px;align-items:flex-start;background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:10px 12px;font-size:13px}
+.notice b{font-weight:600}
+.gauge{position:relative;height:26px;background:var(--sunk);border-radius:4px;margin-top:4px}
+.gauge .avg,.gauge .peak{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.gauge .peak{background:var(--accent-soft);border-right:2px solid var(--accent)}
+.gauge .avg{background:var(--accent);opacity:.75}
+.gauge .lim{position:absolute;top:-4px;bottom:-4px;border-left:2px dashed var(--warn)}
+.gauge-l{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-family:var(--mono);margin-top:4px}
+
+.submit-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px}
+.submit-bar p{margin:0;font-size:13.5px;color:var(--muted);flex:1;min-width:200px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 16px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.pri:hover{filter:brightness(1.05)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+
+.result{border:1px solid var(--ok);background:var(--ok-soft);border-radius:var(--r);padding:16px 20px}
+.result.warn{border-color:var(--warn);background:var(--warn-soft)}
+.result.warn h3{color:var(--warn)}
+.doc .acts a.btn{text-decoration:none;color:var(--ink)}
+.result h3{margin:0 0 4px;font-size:15px;color:var(--ok)}
+.mailto-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.mailto-row a.btn{text-decoration:none;display:inline-block}
+.result p{margin:0;font-size:13.5px}
+pre.sum{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--sunk);border-radius:6px;padding:12px 14px;white-space:pre-wrap;word-break:break-all;margin:10px 0 0;max-height:360px;overflow:auto}
+
+/* chat */
+aside.chat{position:sticky;top:calc(env(safe-area-inset-top,0px) + 80px);height:calc(100vh - 104px);min-height:480px;
+  display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.chat-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);flex:none}
+.dot.off{background:var(--muted)}
+.chat-h b{font-size:15px}
+.chat-h span{font-size:12px;color:var(--muted);display:block}
+.chat-h .x{margin-left:auto;display:none;border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted)}
+.log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:88%;padding:10px 13px;border-radius:10px;font-size:14px;white-space:pre-wrap;word-break:break-word}
+.msg.bot{background:var(--sunk);align-self:flex-start;border-top-left-radius:3px}
+.msg.me{background:var(--accent);color:var(--accent-ink);align-self:flex-end;border-top-right-radius:3px}
+.msg.sys{align-self:center;background:none;color:var(--muted);font-size:12.5px;padding:2px 8px;text-align:center}
+.msg.fill{align-self:flex-start;background:var(--ok-soft);color:var(--ok);font-size:12.5px;border-radius:6px;padding:6px 10px}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px}
+.sugg button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;color:var(--ink)}
+.sugg button:hover{border-color:var(--accent);color:var(--accent)}
+form.composer{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);background:var(--surface)}
+form.composer textarea{min-height:42px;max-height:120px;resize:none;flex:1}
+.fab{display:none}
+.docs-btn{margin-left:auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:12.5px;cursor:pointer;color:var(--ink)}
+.docs-btn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+.docs-panel{border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-direction:column;gap:8px;background:var(--sunk);max-height:45%;overflow-y:auto}
+.docs-panel h4{margin:0;font-size:12.5px;color:var(--muted);font-weight:500}
+.doc{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;align-self:stretch}
+.log .doc{align-self:flex-start;max-width:92%}
+.doc .ico{width:34px;height:40px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font:600 10px var(--mono);display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;position:relative}
+.doc .ico::before{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 9px 9px 0;border-color:transparent var(--bg) transparent transparent}
+.doc b{font-size:13.5px;display:block;line-height:1.35}
+.doc p{margin:2px 0 6px;font-size:12px;color:var(--muted)}
+.doc .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.doc .acts a{font-size:12.5px;color:var(--accent)}
+.doc .meta{font:11.5px var(--mono);color:var(--muted)}
+
+/* engineer view */
+.eng{display:flex;flex-direction:column;gap:14px}
+.eng-empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--muted)}
+.req-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.req-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.req-top b{font-size:15.5px}
+.pill{font-size:12px;padding:2px 9px;border-radius:999px;font-weight:600}
+.pill.s0{background:var(--accent-soft);color:var(--accent)}
+.pill.s1{background:var(--warn-soft);color:var(--warn)}
+.pill.s2{background:var(--ok-soft);color:var(--ok)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px 18px;font-size:13px}
+.kv div span{color:var(--muted);display:block;font-size:12px}
+.kv div em{font-style:normal;font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.req-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.req-act select{width:auto}
+details summary{cursor:pointer;font-size:13px;color:var(--muted)}
+
+@media (max-width:980px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  aside.chat{position:fixed;inset:auto 0 0 0;top:auto;height:min(78vh,640px);border-radius:14px 14px 0 0;z-index:40;
+    transform:translateY(105%);transition:transform .25s ease;box-shadow:0 -8px 30px rgba(0,0,0,.18);
+    padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  aside.chat.open{transform:none}
+  .chat-h .x{display:block}
+  .fab{display:flex;position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:35;
+    background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:12px 18px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.2);cursor:pointer;gap:8px;align-items:center}
+  .intro{grid-template-columns:1fr}
+  .progress{text-align:left}.bar{margin-left:0}
+}
+@media (max-width:520px){.tabs{margin-left:0;width:100%}.tabs button{flex:1}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><b>SK CDN 테스트 개통 신청</b><span>질의서 작성부터 엔지니어 설정까지 한 화면에서</span></div>
+  </div>
+</header>
+
+<div class="shell">
+<main>
+  <!-- 신청서 -->
+  <div id="view-form" style="display:flex;flex-direction:column;gap:20px">
+    <div class="intro">
+      <div>
+        <h1>CDN 테스트 개통에 필요한 정보를 알려주세요</h1>
+        <p>메일로 주고받던 질의서를 웹으로 옮겼습니다. 모르는 항목은 오른쪽 상담 챗봇에 물어보세요. 대화 중에 알려주신 값은 챗봇이 양식에 바로 채워 드립니다.</p>
+      </div>
+      <div class="progress"><span>필수 항목</span><strong id="pg-num">0 / 0</strong><div class="bar"><i id="pg-bar"></i></div></div>
+    </div>
+    <div class="flow" aria-label="진행 단계"><span class="on">① 신청서 작성</span><span>② 담당자에게 메일 발송</span><span>③ 엔지니어 검토·CDN 설정</span><span>④ 테스트 도메인 전달</span></div>
+
+    <form id="req" novalidate style="display:flex;flex-direction:column;gap:20px">
+    <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+    <section class="card" id="sec-a">
+      <div class="card-h"><span class="n">PART 1</span><h2>고객 정보 및 테스트 정보</h2><span class="st" id="st-a"></span></div>
+      <div class="card-b">
+        <div class="q">
+          <label for="company"><span class="no">1</span>회사명 <span class="req">필수</span></label>
+          <input type="text" id="company" name="company" placeholder="예: 주식회사 푸바" autocomplete="organization">
+        </div>
+
+        <div class="q">
+          <div class="ql"><span class="no">2</span>담당자 정보 <span class="req">서비스 담당자 필수</span></div>
+          <div class="tbl-wrap"><table class="contacts">
+            <thead><tr><th></th><th>성명</th><th>휴대폰</th><th>Email</th></tr></thead>
+            <tbody>
+              <tr><td>계약 담당자</td>
+                <td><input type="text" id="c_name" name="c_name" aria-label="계약 담당자 성명"></td>
+                <td><input type="tel" id="c_phone" name="c_phone" placeholder="010-0000-0000" aria-label="계약 담당자 휴대폰"></td>
+                <td><input type="email" id="c_email" name="c_email" placeholder="name@company.com" aria-label="계약 담당자 이메일"></td></tr>
+              <tr><td>서비스 담당자</td>
+                <td><input type="text" id="s_name" name="s_name" aria-label="서비스 담당자 성명"></td>
+                <td><input type="tel" id="s_phone" name="s_phone" placeholder="010-0000-0000" aria-label="서비스 담당자 휴대폰"></td>
+                <td><input type="email" id="s_email" name="s_email" placeholder="name@company.com" aria-label="서비스 담당자 이메일"></td></tr>
+            </tbody>
+          </table></div>
+          <p class="err" id="err-contacts" hidden></p>
+        </div>
+
+        <div class="q">
+          <div class="ql"><span class="no">3</span>테스트 항목 <span class="req">1개 이상</span><button type="button" class="ask" data-ask="다운로드, 캐시, 스트리밍 테스트는 각각 어떤 서비스에 맞나요?">어떤 걸 골라야 하나요?</button></div>
+          <div class="chips">
+            <label class="chk"><input type="checkbox" id="t_download" name="t_download"> 다운로드 <small>설치파일·대용량</small></label>
+            <label class="chk"><input type="checkbox" id="t_cache" name="t_cache"> 캐시 <small>이미지·웹 리소스</small></label>
+            <label class="chk"><input type="checkbox" id="t_stream" name="t_stream"> 스트리밍 <small>HLS·Pseudo</small></label>
+          </div>
+          <p class="err" id="err-titems" hidden>테스트 항목을 하나 이상 선택해 주세요.</p>
+        </div>
+
+        <div class="q">
+          <div class="ql"><span class="no">4</span>테스트 기간 <span class="req">필수</span></div>
+          <div class="row">
+            <input type="date" id="t_start" name="t_start" aria-label="테스트 시작일">
+            <input type="date" id="t_end" name="t_end" aria-label="테스트 종료일">
+          </div>
+          <p class="hint" id="t_days"></p>
+        </div>
+
+        <div class="q">
+          <label for="t_traffic"><span class="no">5</span>테스트 가능 트래픽</label>
+          <div class="inline"><input type="number" id="t_traffic" name="t_traffic" min="0" placeholder="50" class="mono"><span class="unit">Mbps</span></div>
+          <div class="notice"><b>!</b><span>테스트 기간 연장이나 <b>100Mbps 이상</b> 트래픽이 발생할 경우 반드시 사전 협의가 필요합니다.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="sec-b">
+      <div class="card-h"><span class="n">PART 2</span><h2>서비스 관련 정보 (SK CDN Cache)</h2><span class="st" id="st-b"></span></div>
+      <div class="card-b">
+        <div class="q">
+          <div class="ql"><span class="no">1)</span>CDN을 적용할 도메인과 웹 서버 IP <span class="req">필수</span><button type="button" class="ask" data-ask="도메인을 여러 개로 나누면 왜 체감 속도가 빨라지나요? 어떻게 나누면 좋을까요?">도메인 분리가 뭔가요?</button></div>
+          <div class="row">
+            <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+              <textarea id="domains" name="domains" class="mono" placeholder="i.image.foobar.com&#10;m.image.foobar.com" aria-label="웹 서버 도메인"></textarea>
+              <p class="hint">한 줄에 하나씩 입력</p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+              <input type="text" id="origin_ip" name="origin_ip" class="mono" placeholder="203.0.113.10" aria-label="웹 서버 IP">
+              <p class="hint">웹 서버(오리진) IP. 여러 개면 쉼표로 구분</p>
+            </div>
+          </div>
+          <p class="hint">도메인을 여러 개로 분리하면 사용자 체감 속도가 올라갑니다. 예: <code>i.image.foobar.com</code>, <code>m.image.foobar.com</code>, <code>e.image.foobar.com</code></p>
+          <p class="err" id="err-origin" hidden></p>
+        </div>
+
+        <div class="q">
+          <div class="ql"><span class="no">2)</span>웹 서버 포트 <span class="hint">(기본값 80)</span></div>
+          <div class="chips">
+            <label class="chk"><input type="checkbox" id="port_80" name="port_80" checked> <span class="mono">80</span> <small>HTTP</small></label>
+            <label class="chk"><input type="checkbox" id="port_443" name="port_443"> <span class="mono">443</span> <small>HTTPS</small></label>
+            <input type="text" id="port_other" name="port_other" class="mono" placeholder="기타 포트 (예: 8080)" style="max-width:200px" aria-label="기타 포트">
+          </div>
+        </div>
+
+        <div class="q">
+          <label for="cache_ext"><span class="no">3)</span>기본(Common) 확장자 외에 캐싱해야 할 파일<button type="button" class="ask" data-ask="Common 확장자에는 어떤 것들이 포함되나요? 추가로 적어야 하는 확장자는 어떤 경우인가요?">Common 확장자?</button></label>
+          <input type="text" id="cache_ext" name="cache_ext" class="mono" placeholder="예: webp, avif, apk, mp4">
+        </div>
+
+        <div class="q">
+          <label for="nocache_ext"><span class="no">4)</span>캐싱하지 않아야 할 파일</label>
+          <input type="text" id="nocache_ext" name="nocache_ext" class="mono" placeholder="예: php, jsp, json, /api/*">
+          <p class="hint">로그인·결제 등 사용자마다 결과가 다른 동적 페이지는 캐시하지 않는 것이 안전합니다.</p>
+        </div>
+
+        <div class="q">
+          <label for="refresh_days"><span class="no">5)</span>오리진 콘텐츠 갱신 여부 확인 주기 <span class="hint">(기본값 7일)</span><button type="button" class="ask" data-ask="오리진 콘텐츠 갱신 확인 주기(TTL)는 어떻게 정하면 좋나요?">얼마로 할까요?</button></label>
+          <div class="inline"><input type="number" id="refresh_days" name="refresh_days" min="0" value="7" class="mono"><select id="refresh_unit" name="refresh_unit" style="width:auto" aria-label="단위"><option>일</option><option>시간</option><option>분</option></select></div>
+        </div>
+
+        <div class="q">
+          <div class="ql"><span class="no">6)</span>HTTPS(443)를 사용하는 도메인</div>
+          <div class="chips">
+            <label class="chk"><input type="radio" id="ssl_yes" name="ssl" value="사용"> SSL 사용</label>
+            <label class="chk"><input type="radio" id="ssl_no" name="ssl" value="미사용"> 사용 안 함</label>
+          </div>
+          <div id="ssl-box" hidden>
+            <textarea id="ssl_domains" name="ssl_domains" class="mono" placeholder="SSL을 적용할 도메인 (한 줄에 하나)" aria-label="SSL용 도메인"></textarea>
+            <p class="hint">인증서 등록 방식은 담당 엔지니어가 별도로 안내합니다.</p>
+          </div>
+        </div>
+
+        <div class="q">
+          <label for="sample_uri"><span class="no">7)</span>테스트용 샘플 URI<button type="button" class="ask" data-ask="샘플 URI는 어떤 걸 적으면 되나요? 예시를 알려주세요.">예시 보기</button></label>
+          <input type="text" id="sample_uri" name="sample_uri" class="mono" placeholder="http://i.image.foobar.com/banner/main_01.jpg">
+        </div>
+
+        <div class="q">
+          <div class="ql"><span class="no">8)</span>캐시 서비스 예상 트래픽</div>
+          <div class="row">
+            <div class="inline"><span style="font-size:13px;white-space:nowrap">평균</span><input type="number" id="avg_mbps" name="avg_mbps" min="0" class="mono" placeholder="5"><span class="unit">Mbps</span></div>
+            <div class="inline"><span style="font-size:13px;white-space:nowrap">최고</span><input type="number" id="peak_mbps" name="peak_mbps" min="0" class="mono" placeholder="70"><span class="unit">Mbps</span></div>
+          </div>
+          <div class="gauge" aria-hidden="true"><div class="peak" id="g-peak"></div><div class="avg" id="g-avg"></div><div class="lim" id="g-lim"></div></div>
+          <div class="gauge-l"><span>0</span><span id="g-lim-l">100 Mbps 사전 협의 기준</span><span id="g-max">200</span></div>
+          <div class="notice" id="traffic-warn" hidden><b>!</b><span>최고 트래픽이 100Mbps를 넘습니다. 신청 후 담당 엔지니어와 사전 협의가 진행됩니다.</span></div>
+        </div>
+
+        <div class="q">
+          <label for="memo">기타 요청 사항</label>
+          <textarea id="memo" name="memo" placeholder="Referrer 차단, CORS 헤더, 이미지 변환(DIMS) 등 필요한 기능이 있으면 적어 주세요."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <div class="submit-bar">
+      <p id="submit-note">입력한 정보는 서버에 저장되지 않고, 제출하면 CDN 담당자에게 메일로 바로 발송됩니다.</p>
+      <button type="button" class="btn" id="btn-reset">초기화</button>
+      <button type="submit" class="btn pri" id="btn-submit">신청서 제출</button>
+    </div>
+    <div class="result" id="result" hidden>
+      <h3 id="result-h">신청서가 담당자에게 발송되었습니다</h3>
+      <p id="result-p"></p>
+      <div id="mail-fallback" hidden>
+        <div class="mailto-row">
+          <a class="btn pri" id="mail-link" href="#">메일 앱에서 보내기</a>
+          <span class="hint">받는 사람 <span class="mono" id="mail-to-txt">tech@skcdn.com</span></span>
+          <button type="button" class="btn sm" id="btn-copy-to">주소 복사</button>
+        </div>
+        <p class="hint" style="margin-top:10px">메일 앱이 열리지 않으면 주소와 아래 본문을 복사해서 직접 보내 주세요.</p>
+        <p class="hint">제목 <span class="mono" id="mail-subj"></span></p>
+      </div>
+      <div id="result-sum-wrap"><pre class="sum" id="result-sum"></pre>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" id="btn-copy-sum">본문 복사</button><button type="button" class="btn sm" id="btn-copy-subj">제목 복사</button></div></div>
+    </div>
+    </form>
+  </div>
+</main>
+
+<aside class="chat" id="chat" aria-label="CDN 상담 챗봇">
+  <div class="chat-h"><span class="dot" id="chat-dot"></span><div><b>CDN 상담 챗봇</b><span id="chat-sub">질의서 작성을 도와드립니다</span></div><button type="button" class="docs-btn" id="docs-btn" aria-expanded="false" aria-controls="docs-panel">자료실</button><button class="x" id="chat-close" aria-label="닫기">×</button></div>
+  <div class="docs-panel" id="docs-panel" hidden></div>
+  <div class="log" id="log"></div>
+  <div class="sugg" id="sugg"></div>
+  <form class="composer" id="composer">
+    <textarea id="chat-in" placeholder="궁금한 점이나 입력할 값을 적어 주세요" aria-label="질문 입력"></textarea>
+    <button class="btn pri" id="chat-send" type="submit">보내기</button>
+  </form>
+</aside>
+</div>
+<button class="fab" id="fab">챗봇에게 묻기</button>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const FIELDS=["company","c_name","c_phone","c_email","s_name","s_phone","s_email","t_download","t_cache","t_stream","t_start","t_end","t_traffic",
+ "domains","origin_ip","port_80","port_443","port_other","cache_ext","nocache_ext","refresh_days","refresh_unit","ssl","ssl_domains","sample_uri","avg_mbps","peak_mbps","memo"];
+const LABEL={company:"회사명",c_name:"계약 담당자 성명",c_phone:"계약 담당자 휴대폰",c_email:"계약 담당자 이메일",s_name:"서비스 담당자 성명",s_phone:"서비스 담당자 휴대폰",s_email:"서비스 담당자 이메일",
+ t_download:"테스트-다운로드",t_cache:"테스트-캐시",t_stream:"테스트-스트리밍",t_start:"테스트 시작일",t_end:"테스트 종료일",t_traffic:"테스트 가능 트래픽",
+ domains:"웹 서버 도메인",origin_ip:"웹 서버 IP",port_80:"포트 80",port_443:"포트 443",port_other:"기타 포트",cache_ext:"추가 캐싱 확장자",nocache_ext:"캐싱 제외 파일",
+ refresh_days:"갱신 확인 주기",refresh_unit:"갱신 주기 단위",ssl:"SSL 사용여부",ssl_domains:"SSL용 도메인",sample_uri:"샘플 URI",avg_mbps:"평균 트래픽",peak_mbps:"최고 트래픽",memo:"기타 요청"};
+const STATUS=["접수","검토·설정 중","개통 완료"];
+const form=$("#req");
+
+function getVal(k){
+  if(k==="ssl"){const r=form.querySelector('input[name=ssl]:checked');return r?r.value:"";}
+  const el=document.getElementById(k); if(!el) return "";
+  return el.type==="checkbox"?el.checked:el.value.trim();
+}
+function setVal(k,v){
+  if(k==="ssl"){const s=String(v);const yes=/사용|yes|true|y/i.test(s)&&!/안|미사용|no|false/i.test(s);document.getElementById(yes?"ssl_yes":"ssl_no").checked=true;syncSSL();flash(yes?"ssl_yes":"ssl_no");return;}
+  const el=document.getElementById(k); if(!el) return;
+  if(el.type==="checkbox") el.checked=(v===true||v==="true"||v==="예"||v===1);
+  else if(k==="domains"||k==="ssl_domains") el.value=Array.isArray(v)?v.join("\n"):String(v).replace(/,\s*/g,"\n");
+  else el.value=Array.isArray(v)?v.join(", "):String(v);
+  flash(k);
+}
+function flash(k){const el=document.getElementById(k);const t=el&&(el.closest(".chk")||el);if(!t)return;t.classList.remove("flash");void t.offsetWidth;t.classList.add("flash");}
+function state(){const o={};FIELDS.forEach(k=>o[k]=getVal(k));return o;}
+
+/* ---- validation ---- */
+const reEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/, rePhone=/^0\d{1,2}-?\d{3,4}-?\d{4}$/, reIP=/^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/,
+      reDomain=/^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+function lines(s){return String(s||"").split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);}
+function checks(s){
+  return [
+    {sec:"a",ok:!!s.company,ids:["company"],msg:"회사명을 입력해 주세요."},
+    {sec:"a",ok:!!s.s_name,ids:["s_name"],msg:"서비스 담당자 성명을 입력해 주세요.",grp:"contacts"},
+    {sec:"a",ok:rePhone.test(s.s_phone),ids:["s_phone"],msg:"서비스 담당자 휴대폰 번호를 010-1234-5678 형식으로 입력해 주세요.",grp:"contacts"},
+    {sec:"a",ok:reEmail.test(s.s_email),ids:["s_email"],msg:"서비스 담당자 이메일 주소를 확인해 주세요.",grp:"contacts"},
+    {sec:"a",ok:s.t_download||s.t_cache||s.t_stream,ids:[],msg:"",grp:"titems"},
+    {sec:"a",ok:!!s.t_start&&!!s.t_end&&s.t_end>=s.t_start,ids:["t_start","t_end"],msg:""},
+    {sec:"b",ok:lines(s.domains).length>0&&lines(s.domains).every(d=>reDomain.test(d)),ids:["domains"],msg:"도메인 형식을 확인해 주세요. 예: img.foobar.com",grp:"origin"},
+    {sec:"b",ok:lines(s.origin_ip).length>0&&lines(s.origin_ip).every(i=>reIP.test(i)),ids:["origin_ip"],msg:"웹 서버 IP를 203.0.113.10 형식으로 입력해 주세요.",grp:"origin"},
+  ];
+}
+function refresh(){
+  const s=state(), c=checks(s), done=c.filter(x=>x.ok).length;
+  $("#pg-num").textContent=done+" / "+c.length; $("#pg-bar").style.width=(done/c.length*100)+"%";
+  ["a","b"].forEach(k=>{const cs=c.filter(x=>x.sec===k);const d=cs.filter(x=>x.ok).length;const el=$("#st-"+k);el.textContent=d===cs.length?"필수 항목 완료":"필수 "+d+"/"+cs.length;el.classList.toggle("done",d===cs.length);});
+  // dates
+  if(s.t_start&&s.t_end){const days=Math.round((new Date(s.t_end)-new Date(s.t_start))/864e5)+1;$("#t_days").textContent=days>0?("총 "+days+"일"):"종료일이 시작일보다 빠릅니다.";}else $("#t_days").textContent="";
+  // gauge
+  const a=+s.avg_mbps||0,p=+s.peak_mbps||0,max=Math.max(200,Math.ceil(p*1.15/50)*50);
+  $("#g-avg").style.width=Math.min(100,a/max*100)+"%";$("#g-peak").style.width=Math.min(100,p/max*100)+"%";
+  $("#g-lim").style.left=(100/max*100)+"%";$("#g-max").textContent=max;
+  $("#traffic-warn").hidden=!(p>100||(+s.t_traffic||0)>100);
+  save(s);
+}
+function showErrors(){
+  const c=checks(state());let first=null;
+  document.querySelectorAll(".bad").forEach(e=>e.classList.remove("bad"));
+  const grp={contacts:[],titems:[],origin:[]};
+  c.forEach(x=>{if(!x.ok){x.ids.forEach(id=>{const e=document.getElementById(id);e.classList.add("bad");first=first||e;});if(x.grp&&x.msg)grp[x.grp].push(x.msg);if(x.grp==="titems")grp.titems.push("x");}});
+  $("#err-contacts").hidden=!grp.contacts.length;$("#err-contacts").textContent=grp.contacts.join(" ");
+  $("#err-titems").hidden=!grp.titems.length;
+  $("#err-origin").hidden=!grp.origin.length;$("#err-origin").textContent=grp.origin.join(" ");
+  if(!first&&grp.titems.length) first=$("#t_download");
+  if(first){first.scrollIntoView({behavior:"smooth",block:"center"});first.focus({preventScroll:true});}
+  return c.every(x=>x.ok);
+}
+
+/* ---- summary for engineers ---- */
+function summary(s){
+  const items=[s.t_download&&"다운로드",s.t_cache&&"캐시",s.t_stream&&"스트리밍"].filter(Boolean).join(", ")||"-";
+  const ports=[s.port_80&&"80",s.port_443&&"443",...lines(s.port_other)].filter(Boolean).join(", ")||"80";
+  const v=x=>x?String(x):"-";
+  return [
+"[SK CDN 테스트 개통 요청서]",
+"■ 고객 정보 및 테스트 정보",
+"1. 회사명 : "+v(s.company),
+"2. 계약 담당자 : "+([s.c_name,s.c_phone,s.c_email].filter(Boolean).join(" / ")||"-"),
+"   서비스 담당자 : "+[s.s_name,s.s_phone,s.s_email].filter(Boolean).join(" / "),
+"3. 테스트 항목 : "+items,
+"4. 테스트 기간 : "+v(s.t_start)+" ~ "+v(s.t_end),
+"5. 테스트 가능 트래픽 : "+(s.t_traffic?s.t_traffic+" Mbps":"-"),
+"",
+"■ 서비스 관련 정보 (SK CDN Cache)",
+"1) 웹 서버 도메인 : "+(lines(s.domains).join(", ")||"-"),
+"   웹 서버 IP : "+(lines(s.origin_ip).join(", ")||"-"),
+"2) Port : "+ports,
+"3) 추가 캐싱 확장자 : "+v(s.cache_ext),
+"4) 캐싱 제외 파일 : "+v(s.nocache_ext),
+"5) 오리진 갱신 확인 주기 : "+(s.refresh_days?s.refresh_days+s.refresh_unit:"7일(기본)"),
+"6) SSL 사용여부 : "+v(s.ssl)+(s.ssl==="사용"?"  / SSL 도메인 : "+(lines(s.ssl_domains).join(", ")||"-"):""),
+"7) 샘플 URI : "+v(s.sample_uri),
+"8) 예상 트래픽 : 평균 "+(s.avg_mbps||"-")+" Mbps / 최고 "+(s.peak_mbps||"-")+" Mbps"+((+s.peak_mbps>100||+s.t_traffic>100)?"  ※ 100Mbps 초과, 사전 협의 필요":""),
+"기타 요청 : "+v(s.memo)
+  ].join("\n");
+}
+
+/* 개인정보 보호: 입력값은 페이지 메모리에만 있고 저장하지 않음 */
+const MAIL_TO=document.documentElement.dataset.mailTo||"tech@skcdn.com";
+function save(){}
+function syncSSL(){$("#ssl-box").hidden=getVal("ssl")!=="사용"; if(getVal("ssl")==="사용"&&!$("#port_443").checked){$("#port_443").checked=true;}}
+
+form.addEventListener("input",refresh);form.addEventListener("change",()=>{syncSSL();refresh();});
+$("#btn-reset").onclick=function(){
+  if(this.dataset.armed){form.reset();$("#refresh_days").value=7;history=[];$("#port_80").checked=true;syncSSL();refresh();$("#result").hidden=true;this.textContent="초기화";delete this.dataset.armed;return;}
+  this.dataset.armed="1";this.textContent="한 번 더 누르면 초기화";setTimeout(()=>{this.textContent="초기화";delete this.dataset.armed;},3000);
+};
+
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ---- 신청서 제출: 서버(/api/submit)가 담당자에게 메일 발송. 서버나 SMTP가 실패하면 메일 앱으로 보내는 방법을 대신 보여줌 ---- */
+function subjectOf(s){return "[SK CDN 테스트 개통 요청] "+s.company+" / "+(lines(s.domains)[0]||"");}
+function showMailFallback(s,body,reason){
+  const subj=subjectOf(s);
+  $("#result").classList.add("warn");
+  $("#result-h").textContent="자동 발송에 실패했습니다";
+  $("#result-p").textContent=(reason?reason+" ":"")+"아래 버튼으로 메일 앱을 열어 직접 보내 주세요.";
+  $("#mail-fallback").hidden=false;
+  $("#mail-subj").textContent=subj;$("#result-sum").textContent=body;
+  $("#mail-link").href="mailto:"+MAIL_TO+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);
+}
+form.addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!showErrors()){ $("#submit-note").textContent="빨간색으로 표시된 필수 항목을 확인해 주세요."; return; }
+  const s=state(), body=summary(s), btn=$("#btn-submit"), res=$("#result");
+  btn.disabled=true;btn.textContent="발송 중…";
+  res.classList.remove("warn");$("#mail-fallback").hidden=true;
+  try{
+    const r=await fetch("api/submit",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({form:s,website:$("#website").value})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.ok) throw new Error(j.error||("HTTP "+r.status));
+    $("#result-h").textContent="신청서가 담당자에게 발송되었습니다";
+    $("#result-p").textContent="담당 엔지니어가 검토한 뒤 "+s.s_name+" 님("+s.s_email+")께 연락드립니다. 같은 내용의 확인 메일이 서비스 담당자 주소로도 발송되었습니다.";
+    $("#result-sum").textContent=body;$("#result-sum-wrap").hidden=false;
+  }catch(err){
+    showMailFallback(s,body,err&&err.message&&!/^HTTP|Failed|NetworkError/.test(err.message)?err.message:"");
+  }finally{
+    btn.disabled=false;btn.textContent="신청서 제출";
+    res.hidden=false;res.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
+});
+function copyText(t,btn,selEl){const old=btn.textContent;
+  const fallback=()=>{if(!selEl)return;const r=document.createRange();r.selectNodeContents(selEl);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);btn.textContent="선택됨, Ctrl+C로 복사";setTimeout(()=>btn.textContent=old,2500);};
+  try{navigator.clipboard.writeText(t).then(()=>{btn.textContent="복사됨";setTimeout(()=>btn.textContent=old,1500);}).catch(fallback);}catch(e){fallback();}}
+$("#btn-copy-sum").onclick=function(){copyText($("#result-sum").textContent,this,$("#result-sum"));};
+$("#btn-copy-subj").onclick=function(){copyText($("#mail-subj").textContent,this,$("#mail-subj"));};
+$("#btn-copy-to").onclick=function(){copyText(MAIL_TO,this,$("#mail-to-txt"));};
+document.addEventListener("click",e=>{const b=e.target.closest("button[data-ask]");if(b){openChat();ask(b.dataset.ask);}});
+form.addEventListener("input",()=>{$("#result").hidden=true;});
+
+/* ---- 챗봇 ---- */
+let history=[], busy=false, ctl=null, chatMode="faq";
+const FAQ=[
+ ["Common 확장자에는 뭐가 포함되나요?","jpg, jpeg, png, gif, css, js, ico, svg, woff 같은 일반 정적 파일은 기본으로 캐시됩니다. webp, avif, apk, mp4, zip처럼 그 외 확장자를 캐시하려면 3번 항목에 적어 주세요."],
+ ["오리진 갱신 주기는 얼마로 하나요?","기본값은 7일입니다. 파일명이 바뀌지 않은 채 내용이 자주 바뀌면(예: 배너 이미지) 1일 이하로 짧게 잡고, 버전이 붙은 정적 파일은 7일 이상 길게 두는 것이 일반적입니다. 오리진의 Cache-Control 헤더가 있으면 그 값이 우선 적용됩니다."],
+ ["100Mbps가 넘으면 어떻게 되나요?","테스트 기간 연장이나 100Mbps 이상 트래픽이 예상되면 사전 협의가 필요합니다. 신청서를 제출하면 담당 엔지니어가 연락드려 일정과 용량을 조율합니다."],
+ ["샘플 URI는 어떤 걸 적나요?","CDN 적용 후 정상 동작을 확인할 실제 파일 주소를 1~3개 적어 주세요. 예: http://i.image.foobar.com/banner/main_01.jpg"],
+ ["SK CDN은 어떤 서비스를 제공하나요?","대용량 파일 배포용 다운로드, 웹 이미지·리소스용 Cache, VoD·Live·Global 스트리밍을 제공합니다. 부가로 Transcoding, Live Clipping, DIMS 이미지 변환, DRM·URL 인증 같은 콘텐츠 보안, DDoS 클린존, 실시간 통계와 24시간 관제를 지원합니다. 국내 7개 DC, 약 2Tbps 용량, 1,300여 대 Cache 서버로 운영됩니다(2024.04 기준)."],
+ ["제안서·소개 자료를 받고 싶어요","아래 자료를 내려받거나 새 탭에서 볼 수 있습니다. 가장 최신 자료는 2024년 4월 서비스 소개입니다.","docs"],
+ ["담당자에게 직접 문의하고 싶어요","주제에 맞는 담당자에게 연락해 주세요.\n\n기술 설정·장애·연동 문의\n- 최준철 매니저: chchch3@sk.com / 010-9356-6478\n- 마춘희 매니저: bux@sk.com / 010-4538-8415\n\n요금·계약·판매 정책 문의\n- 이명제 매니저: mlee@sk.com / 010-8663-7560"],
+];
+const DOCS=[
+ {id:"service-intro-2024",title:"SKB CDN 서비스 소개 (2024.04)",desc:"가장 최신 자료. CDN 개념, 인프라, 캐시·퍼지, Transcoding, Live, DIMS, 보안, 통계, 관제, 레퍼런스",path:"docs/skb-cdn-service-intro-2024.pdf",file:"SKB_CDN_서비스소개_2024.04.pdf",pages:22,size:"5.2MB"},
+ {id:"product-intro",title:"SK CDN 상품소개 (제안서 전체본)",desc:"회사 소개·재무·신용등급, CDN 일반, 캐시 특장점, On-Air·SSL·보안·무중단·DDoS·AI 관제, 통계, 레퍼런스",path:"docs/skb-cdn-product-intro.pdf",file:"SK_CDN_상품소개.pdf",pages:21,size:"4.8MB"},
+ {id:"proposal-standard",title:"SK CDN 제안서 (CDN 표준)",desc:"회사 소개를 뺀 표준 제안 내용. CDN 일반, 캐시, Purge·DIMS, 특장점 1~8, 통계, 레퍼런스",path:"docs/skb-cdn-proposal-standard.pdf",file:"SK_CDN_제안서_표준.pdf",pages:16,size:"3.7MB"}
+];
+function docCard(d){
+  const el=document.createElement("div");el.className="doc";
+  el.innerHTML=`<div class="ico">PDF</div><div><b></b><p></p><div class="acts"><a class="btn sm dl">내려받기</a><a class="view" target="_blank" rel="noopener">새 탭에서 보기</a><span class="meta"></span></div></div>`;
+  el.querySelector("b").textContent=d.title;el.querySelector("p").textContent=d.desc;
+  const dl=el.querySelector(".dl");dl.href=d.path;dl.setAttribute("download",d.file);
+  el.querySelector(".view").href=d.path;el.querySelector(".meta").textContent=d.pages+"쪽 · "+d.size;
+  return el;
+}
+function addDocs(ids){const list=DOCS.filter(d=>!ids||ids.includes(d.id));list.forEach(d=>{$("#log").appendChild(docCard(d));});$("#log").scrollTop=1e9;return list;}
+(function(){const panel=$("#docs-panel");panel.innerHTML="<h4>참고 자료 (PDF)</h4>";DOCS.forEach(d=>panel.appendChild(docCard(d)));
+  $("#docs-btn").onclick=function(){const open=panel.hidden;panel.hidden=!open;this.setAttribute("aria-expanded",open);};})();
+function addMsg(cls,text){const d=document.createElement("div");d.className="msg "+cls;d.textContent=text;$("#log").appendChild(d);$("#log").scrollTop=1e9;return d;}
+function renderSugg(){$("#sugg").innerHTML=FAQ.map((f,i)=>`<button type="button" data-faq="${i}">${esc(f[0])}</button>`).join("");}
+function faqAnswer(q){
+  const f=FAQ.find(x=>x[0]===q);
+  if(f){addMsg("bot",f[1]);if(f[2]==="docs")addDocs();return;}
+  // FAQ 모드: 질문 단어와 겹치는 자주 묻는 질문을 찾음
+  const words=q.replace(/[?？.,!]/g," ").split(/\s+/).filter(w=>w.length>=2);
+  let best=null,score=0;
+  FAQ.forEach(x=>{const sc=words.filter(w=>(x[0]+" "+x[1]).includes(w)).length;if(sc>score){score=sc;best=x;}});
+  if(best&&score>=1){addMsg("bot",best[1]);if(best[2]==="docs")addDocs();}
+  else addMsg("bot","그 질문은 자동 답변 목록에 없습니다. 아래 자주 묻는 질문을 눌러 보시거나 담당자에게 직접 문의해 주세요.\n\n- 기술: 최준철 매니저 chchch3@sk.com / 010-9356-6478\n- 기술: 마춘희 매니저 bux@sk.com / 010-4538-8415\n- 요금·계약: 이명제 매니저 mlee@sk.com / 010-8663-7560");
+}
+$("#sugg").addEventListener("click",e=>{const b=e.target.closest("button[data-faq]");if(!b)return;const f=FAQ[+b.dataset.faq];
+  if(f[2]==="docs"||chatMode!=="llm"){addMsg("me",f[0]);faqAnswer(f[0]);return;}ask(f[0]);});
+
+addMsg("bot","안녕하세요. SK CDN 테스트 개통 신청을 도와드리는 상담 챗봇입니다.\n\n항목의 뜻이 헷갈리거나 어떤 값을 넣어야 할지 모르겠으면 물어보세요. \"도메인은 img.foobar.com, 서버 IP는 203.0.113.10\"처럼 말씀해 주시면 양식에 바로 채워 드립니다.");
+renderSugg();
+fetch("api/config").then(r=>r.json()).then(c=>{chatMode=c.chatMode==="llm"?"llm":"faq";applyMode();}).catch(()=>{chatMode="faq";applyMode();});
+function applyMode(){
+  if(chatMode!=="llm"){$("#chat-dot").classList.add("off");$("#chat-sub").textContent="자주 묻는 질문 위주로 답합니다";}
+  else{$("#chat-dot").classList.remove("off");$("#chat-sub").textContent="질의서 작성을 도와드립니다";}
+}
+function applyFills(fields){
+  const done=[];Object.keys(fields||{}).forEach(k=>{if(FIELDS.includes(k)){setVal(k,fields[k]);done.push(LABEL[k]||k);}});
+  if(done.length){syncSSL();refresh();addMsg("fill","✓ 양식에 채움: "+done.join(", "));}
+}
+async function ask(q){
+  if(busy) return;
+  addMsg("me",q);
+  if(chatMode!=="llm"){faqAnswer(q);return;}
+  busy=true;$("#chat-send").textContent="중지";
+  const bubble=addMsg("bot","생각하는 중…");
+  ctl=new AbortController();
+  try{
+    const r=await fetch("api/chat",{method:"POST",headers:{"Content-Type":"application/json"},signal:ctl.signal,
+      body:JSON.stringify({question:q,history:history.slice(-8),form:state()})});
+    const j=await r.json().catch(()=>({}));
+    if(r.status===429) throw new Error("질문이 많아 잠시 쉬어야 합니다. 1분쯤 뒤에 다시 물어봐 주세요.");
+    if(!r.ok) throw new Error(j.error||"답변을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    const answer=(j.text||"").trim()||"(답변이 비어 있습니다. 다시 질문해 주세요.)";
+    bubble.textContent=answer;
+    applyFills(j.fills);
+    if(Array.isArray(j.docs)&&j.docs.length) addDocs(j.docs);
+    history.push({role:"user",content:q},{role:"assistant",content:answer});
+  }catch(e){
+    bubble.textContent=e&&e.name==="AbortError"?"답변을 중지했습니다.":(e&&e.message)||"답변을 가져오지 못했습니다.";
+  }finally{busy=false;ctl=null;$("#chat-send").textContent="보내기";}
+}
+$("#composer").addEventListener("submit",e=>{e.preventDefault();if(busy){ctl&&ctl.abort();return;}const v=$("#chat-in").value.trim();if(!v)return;$("#chat-in").value="";ask(v.slice(0,1000));});
+$("#chat-in").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("#composer").requestSubmit();}});
+function openChat(){$("#chat").classList.add("open");}
+$("#fab").onclick=openChat;$("#chat-close").onclick=()=>$("#chat").classList.remove("open");
+
+syncSSL();refresh();
+})();
+</script>
+</body>
+</html>

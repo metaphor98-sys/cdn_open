@@ -1,0 +1,14 @@
+# /etc/systemd/system/skcdn-portal.service
+[Unit]
+Description=SK CDN request portal
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/cdn-portal
+ExecStart=/usr/bin/node server/server.js
+Restart=always
+User=www-data
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
