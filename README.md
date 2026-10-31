@@ -19,6 +19,7 @@ npm start                 # http://localhost:3000
 - `server/config.js` 담당자 연락처, 자료 목록
 - `server/knowledge.md` 챗봇이 참고하는 서비스 정보
 - `server/rules.md` 챗봇 답변 규칙
+- `deploy/mail-relay.gs` SMTP를 못 쓰는 곳(Render 무료 등)용 Gmail 메일 중계 스크립트
 - `deploy/` Nginx, systemd 예시 / `Dockerfile` / `ecosystem.config.js`(pm2)
 
 ## 챗봇 모드
