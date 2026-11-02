@@ -204,7 +204,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--muted)}
 
 <header class="top">
   <div class="top-in">
-    <div class="brand"><b>SK CDN 테스트 개통 신청</b><span>질의서 작성부터 엔지니어 설정까지 한 화면에서</span></div>
+    <div class="brand"><b>SK CDN 테스트 개통 신청</b><span>질의서 작성부터 엔지니어 설정요청까지 한 화면에서</span></div>
   </div>
 </header>
 
@@ -228,7 +228,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--muted)}
       <div class="card-b">
         <div class="q">
           <label for="company"><span class="no">1</span>회사명 <span class="req">필수</span></label>
-          <input type="text" id="company" name="company" placeholder="예: 주식회사 푸바" autocomplete="organization">
+          <input type="text" id="company" name="company" placeholder="예: 주식회사 호라이즌" autocomplete="organization">
         </div>
 
         <div class="q">
@@ -283,7 +283,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--muted)}
           <div class="ql"><span class="no">1)</span>CDN을 적용할 도메인과 웹 서버 IP <span class="req">필수</span><button type="button" class="ask" data-ask="도메인을 여러 개로 나누면 왜 체감 속도가 빨라지나요? 어떻게 나누면 좋을까요?">도메인 분리가 뭔가요?</button></div>
           <div class="row">
             <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
-              <textarea id="domains" name="domains" class="mono" placeholder="i.image.foobar.com&#10;m.image.foobar.com" aria-label="웹 서버 도메인"></textarea>
+              <textarea id="domains" name="domains" class="mono" placeholder="i.image.skhorizon.com&#10;m.image.skhorizon.com" aria-label="웹 서버 도메인"></textarea>
               <p class="hint">한 줄에 하나씩 입력</p>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
@@ -291,7 +291,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--muted)}
               <p class="hint">웹 서버(오리진) IP. 여러 개면 쉼표로 구분</p>
             </div>
           </div>
-          <p class="hint">도메인을 여러 개로 분리하면 사용자 체감 속도가 올라갑니다. 예: <code>i.image.foobar.com</code>, <code>m.image.foobar.com</code>, <code>e.image.foobar.com</code></p>
+          <p class="hint">도메인을 여러 개로 분리하면 사용자 체감 속도가 올라갑니다. 예: <code>i.image.skhorizon.com</code>, <code>m.image.skhorizon.com</code>, <code>e.image.skhorizon.com</code></p>
           <p class="err" id="err-origin" hidden></p>
         </div>
 
@@ -334,7 +334,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--muted)}
 
         <div class="q">
           <label for="sample_uri"><span class="no">7)</span>테스트용 샘플 URI<button type="button" class="ask" data-ask="샘플 URI는 어떤 걸 적으면 되나요? 예시를 알려주세요.">예시 보기</button></label>
-          <input type="text" id="sample_uri" name="sample_uri" class="mono" placeholder="http://i.image.foobar.com/banner/main_01.jpg">
+          <input type="text" id="sample_uri" name="sample_uri" class="mono" placeholder="http://i.image.skhorizon.com/banner/main_01.jpg">
         </div>
 
         <div class="q">
@@ -432,7 +432,7 @@ function checks(s){
     {sec:"a",ok:reEmail.test(s.s_email),ids:["s_email"],msg:"서비스 담당자 이메일 주소를 확인해 주세요.",grp:"contacts"},
     {sec:"a",ok:s.t_download||s.t_cache||s.t_stream,ids:[],msg:"",grp:"titems"},
     {sec:"a",ok:!!s.t_start&&!!s.t_end&&s.t_end>=s.t_start,ids:["t_start","t_end"],msg:""},
-    {sec:"b",ok:lines(s.domains).length>0&&lines(s.domains).every(d=>reDomain.test(d)),ids:["domains"],msg:"도메인 형식을 확인해 주세요. 예: img.foobar.com",grp:"origin"},
+    {sec:"b",ok:lines(s.domains).length>0&&lines(s.domains).every(d=>reDomain.test(d)),ids:["domains"],msg:"도메인 형식을 확인해 주세요. 예: img.skhorizon.com",grp:"origin"},
     {sec:"b",ok:lines(s.origin_ip).length>0&&lines(s.origin_ip).every(i=>reIP.test(i)),ids:["origin_ip"],msg:"웹 서버 IP를 203.0.113.10 형식으로 입력해 주세요.",grp:"origin"},
   ];
 }
@@ -551,7 +551,7 @@ const FAQ=[
  ["Common 확장자에는 뭐가 포함되나요?","jpg, jpeg, png, gif, css, js, ico, svg, woff 같은 일반 정적 파일은 기본으로 캐시됩니다. webp, avif, apk, mp4, zip처럼 그 외 확장자를 캐시하려면 3번 항목에 적어 주세요."],
  ["오리진 갱신 주기는 얼마로 하나요?","기본값은 7일입니다. 파일명이 바뀌지 않은 채 내용이 자주 바뀌면(예: 배너 이미지) 1일 이하로 짧게 잡고, 버전이 붙은 정적 파일은 7일 이상 길게 두는 것이 일반적입니다. 오리진의 Cache-Control 헤더가 있으면 그 값이 우선 적용됩니다."],
  ["100Mbps가 넘으면 어떻게 되나요?","테스트 기간 연장이나 100Mbps 이상 트래픽이 예상되면 사전 협의가 필요합니다. 신청서를 제출하면 담당 엔지니어가 연락드려 일정과 용량을 조율합니다."],
- ["샘플 URI는 어떤 걸 적나요?","CDN 적용 후 정상 동작을 확인할 실제 파일 주소를 1~3개 적어 주세요. 예: http://i.image.foobar.com/banner/main_01.jpg"],
+ ["샘플 URI는 어떤 걸 적나요?","CDN 적용 후 정상 동작을 확인할 실제 파일 주소를 1~3개 적어 주세요. 예: http://i.image.skhorizon.com/banner/main_01.jpg"],
  ["SK CDN은 어떤 서비스를 제공하나요?","대용량 파일 배포용 다운로드, 웹 이미지·리소스용 Cache, VoD·Live·Global 스트리밍을 제공합니다. 부가로 Transcoding, Live Clipping, DIMS 이미지 변환, DRM·URL 인증 같은 콘텐츠 보안, DDoS 클린존, 실시간 통계와 24시간 관제를 지원합니다. 국내 7개 DC, 약 2Tbps 용량, 1,300여 대 Cache 서버로 운영됩니다(2024.04 기준)."],
  ["제안서·소개 자료를 받고 싶어요","아래 자료를 내려받거나 새 탭에서 볼 수 있습니다. 가장 최신 자료는 2024년 4월 서비스 소개입니다.","docs"],
  ["담당자에게 직접 문의하고 싶어요","주제에 맞는 담당자에게 연락해 주세요.\n\n기술 설정·장애·연동 문의\n- 최준철 매니저: chchch3@sk.com / 010-9356-6478\n- 마춘희 매니저: bux@sk.com / 010-4538-8415\n\n요금·계약·판매 정책 문의\n- 이명제 매니저: mlee@sk.com / 010-8663-7560"],
@@ -587,7 +587,7 @@ function faqAnswer(q){
 $("#sugg").addEventListener("click",e=>{const b=e.target.closest("button[data-faq]");if(!b)return;const f=FAQ[+b.dataset.faq];
   if(f[2]==="docs"||chatMode!=="llm"){addMsg("me",f[0]);faqAnswer(f[0]);return;}ask(f[0]);});
 
-addMsg("bot","안녕하세요. SK CDN 테스트 개통 신청을 도와드리는 상담 챗봇입니다.\n\n항목의 뜻이 헷갈리거나 어떤 값을 넣어야 할지 모르겠으면 물어보세요. \"도메인은 img.foobar.com, 서버 IP는 203.0.113.10\"처럼 말씀해 주시면 양식에 바로 채워 드립니다.");
+addMsg("bot","안녕하세요. SK CDN 테스트 개통 신청을 도와드리는 상담 챗봇입니다.\n\n항목의 뜻이 헷갈리거나 어떤 값을 넣어야 할지 모르겠으면 물어보세요. \"도메인은 img.skhorizon.com, 서버 IP는 203.0.113.10\"처럼 말씀해 주시면 양식에 바로 채워 드립니다.");
 renderSugg();
 fetch("api/config").then(r=>r.json()).then(c=>{chatMode=c.chatMode==="llm"?"llm":"faq";applyMode();}).catch(()=>{chatMode="faq";applyMode();});
 function applyMode(){
